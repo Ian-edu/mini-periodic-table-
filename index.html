@@ -1,0 +1,627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+
+<!-- PWA / iOS Web App Meta Tags -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Atom Builder">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1a6fc4">
+<meta name="description" content="IGCSE Chemistry 0620 Chapter 1 - Atomic Structure Interactive Study Tool">
+
+<!-- PWA Manifest -->
+<link rel="manifest" href="manifest.json">
+
+<!-- iOS Icons -->
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" sizes="512x512" href="icon-512.png">
+
+<title>IGCSE Atomic Structure</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{height:100%}
+body{
+  font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text',Arial,sans-serif;
+  background:#f0f0ee;color:#111;
+  min-height:100%;
+  /* iOS safe area support */
+  padding-top:env(safe-area-inset-top);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+
+/* HEADER */
+.hdr{
+  background:#1a6fc4;
+  padding:14px 16px 10px;
+  padding-top:calc(14px + env(safe-area-inset-top));
+  text-align:center;
+  position:sticky;top:0;z-index:100;
+}
+.hdr h1{font-size:16px;font-weight:700;color:#fff}
+.hdr p{font-size:11px;color:rgba(255,255,255,0.75);margin-top:2px}
+
+/* INSTALL BANNER */
+#installBanner{
+  display:none;
+  background:#fff8e1;
+  border-bottom:1px solid #ffe082;
+  padding:10px 14px;
+  font-size:12px;
+  color:#5a3000;
+  text-align:center;
+  line-height:1.5;
+}
+#installBanner b{display:block;font-size:13px;margin-bottom:2px}
+#installBanner .close-btn{float:right;background:none;border:none;font-size:16px;cursor:pointer;color:#5a3000;margin-top:-2px;padding:0 4px}
+
+/* TABS */
+.tabs{
+  display:flex;
+  background:#fff;
+  border-bottom:1px solid #e0e0e0;
+  position:sticky;
+  top:calc(54px + env(safe-area-inset-top));
+  z-index:99;
+}
+.tab{
+  flex:1;padding:12px 4px;font-size:13px;font-weight:600;
+  color:#888;border:none;background:none;cursor:pointer;
+  border-bottom:3px solid transparent;
+}
+.tab.on{color:#1a6fc4;border-bottom-color:#1a6fc4}
+
+/* PANELS */
+.panel{display:none;padding:14px 14px 60px}
+.panel.on{display:block}
+
+/* ATOM CANVAS */
+#atomWrap{
+  background:#fff;border-radius:16px;padding:18px 12px 14px;
+  text-align:center;margin-bottom:14px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.08);
+}
+canvas{display:block;margin:0 auto;border-radius:8px}
+#conf{font-size:13px;font-weight:600;color:#444;margin-top:8px;letter-spacing:.02em}
+
+/* ELEMENT GRID */
+.egrid{display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:14px}
+.ebtn{
+  padding:8px 2px;border-radius:10px;border:1px solid #e0e0e0;
+  background:#fff;font-size:11px;font-weight:600;text-align:center;cursor:pointer;color:#444;
+  box-shadow:0 1px 2px rgba(0,0,0,0.05);
+  transition:transform .1s;
+}
+.ebtn:active{transform:scale(0.92)}
+.ebtn .s{font-size:16px;display:block;font-weight:700;line-height:1.3}
+.ebtn .z{font-size:9px;color:#aaa;display:block}
+.ebtn.on{background:#dbeeff;border-color:#4a9ede;color:#1a3f6f}
+.ebtn.on .z{color:#4a9ede}
+
+/* CARDS */
+.card{
+  background:#fff;border-radius:14px;padding:14px;margin-bottom:12px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.07);
+}
+.card h3{font-size:15px;font-weight:700;margin-bottom:6px}
+.card p{font-size:13px;color:#555;line-height:1.65}
+.slabel{font-size:10px;font-weight:700;color:#999;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.tags{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+.tag{font-size:11px;font-weight:700;padding:4px 10px;border-radius:20px}
+.tp{background:#fde8df;color:#8b2200}
+.tn{background:#dbeeff;color:#0a3d7a}
+.te{background:#ebe8ff;color:#2d1a8f}
+.ta{background:#dff5e4;color:#0d4020}
+
+/* PERIODIC TABLE */
+.ptscroll{overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:6px}
+.ptgrid{display:grid;grid-template-columns:repeat(18,28px);gap:2px;width:max-content}
+.pc{width:28px;height:36px;border-radius:4px;text-align:center;cursor:pointer;padding:2px 1px;border:1.5px solid transparent}
+.pc:active{opacity:.7}
+.pc .pz{font-size:7px;color:#999;line-height:1.3}
+.pc .ps{font-size:10px;font-weight:700;line-height:1.2}
+.pc .pn{font-size:6px;color:#999;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pc.hi{border-color:#1a6fc4!important;box-shadow:0 0 0 2px #90c4f8}
+.em{background:none!important;border:none!important;cursor:default;pointer-events:none}
+.ptleg{display:flex;flex-wrap:wrap;gap:8px;font-size:11px;color:#555;margin:8px 0}
+.ld{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:3px;vertical-align:middle}
+#ptinfo{
+  background:#fff;border-radius:14px;padding:14px;min-height:90px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.07);
+}
+#ptinfo h3{font-size:15px;font-weight:700;margin-bottom:6px}
+#ptinfo p{font-size:13px;color:#555;line-height:1.65}
+
+/* QUIZ */
+.qbar{display:flex;gap:3px;margin-bottom:14px}
+.qd{height:5px;border-radius:3px;flex:1;background:#e0e0e0;transition:background .3s}
+.qd.ok{background:#3a9e4f}
+.qd.no{background:#d9363e}
+.qcard{
+  background:#fff;border-radius:14px;padding:16px;margin-bottom:10px;
+  box-shadow:0 1px 3px rgba(0,0,0,0.07);
+  animation:popIn .25s ease;
+}
+@keyframes popIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.qcard .ql{font-size:11px;color:#999;font-weight:600;margin-bottom:5px}
+.qcard .qq{font-size:15px;font-weight:700;margin-bottom:14px;line-height:1.5;color:#111}
+.qbox{display:flex;align-items:center;gap:12px;background:#f5f5f3;border-radius:10px;padding:10px;margin-bottom:14px}
+.qel{width:54px;height:54px;border-radius:10px;border:1px solid #e0e0e0;display:flex;flex-direction:column;align-items:center;justify-content:center;flex-shrink:0}
+.qel .qs{font-size:22px;font-weight:700;line-height:1.1}
+.qel .qnum{font-size:10px;color:#999}
+.qfacts{font-size:12px;color:#555;line-height:1.9}
+.opts{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.opt{
+  padding:12px 10px;border-radius:10px;border:1.5px solid #e0e0e0;
+  background:#f5f5f3;font-size:13px;font-weight:600;cursor:pointer;
+  text-align:left;line-height:1.4;color:#111;
+  transition:transform .1s;
+}
+.opt:active:not([disabled]){transform:scale(0.95)}
+.opt.ok{background:#dff5e4;border-color:#3a9e4f;color:#0d4020;pointer-events:none}
+.opt.no{background:#fde8e8;border-color:#d9363e;color:#5a0000;pointer-events:none}
+.opt.show{background:#dff5e4;border-color:#3a9e4f;color:#0d4020;pointer-events:none}
+.opt[disabled]{pointer-events:none;opacity:.5}
+.fb{font-size:13px;font-weight:600;padding:11px 13px;border-radius:10px;margin-top:10px;display:none;line-height:1.6}
+.fb.on{display:block}
+.fb.ok{background:#dff5e4;color:#0d4020}
+.fb.no{background:#fde8e8;color:#5a0000}
+.nxt{
+  margin-top:12px;width:100%;padding:14px;border-radius:12px;
+  border:none;background:#1a6fc4;color:#fff;
+  font-size:15px;font-weight:700;cursor:pointer;display:none;
+  box-shadow:0 2px 8px rgba(26,111,196,0.3);
+}
+.nxt.on{display:block}
+.nxt:active{transform:scale(0.98);background:#155da0}
+.sc{
+  background:#fff;border-radius:16px;padding:30px 20px;text-align:center;
+  box-shadow:0 1px 3px rgba(0,0,0,0.07);animation:popIn .3s ease;
+}
+.scn{font-size:56px;font-weight:700;color:#1a6fc4;line-height:1}
+.scl{font-size:14px;color:#888;margin-top:4px}
+.scbar{display:flex;gap:4px;height:9px;margin:14px 0}
+.scb{flex:1;border-radius:5px;background:#e0e0e0}
+.scb.ok{background:#3a9e4f}
+.scb.no{background:#d9363e}
+.scmsg{font-size:14px;color:#333;line-height:1.6;margin-top:10px}
+.rbtn{
+  margin-top:16px;width:100%;padding:14px;border-radius:12px;
+  border:none;background:#1a6fc4;color:#fff;
+  font-size:15px;font-weight:700;cursor:pointer;
+  box-shadow:0 2px 8px rgba(26,111,196,0.3);
+}
+.rbtn:active{transform:scale(0.98)}
+
+/* OFFLINE BADGE */
+#offlineBadge{
+  display:none;position:fixed;bottom:20px;left:50%;transform:translateX(-50%);
+  background:#333;color:#fff;padding:8px 16px;border-radius:20px;
+  font-size:12px;font-weight:600;z-index:999;
+}
+</style>
+</head>
+<body>
+
+<!-- Install prompt for iOS -->
+<div id="installBanner">
+  <button class="close-btn" onclick="document.getElementById('installBanner').style.display='none'">&#10005;</button>
+  <b>&#128241; Add to Home Screen for best experience</b>
+  Tap the Share button &#9650; then "Add to Home Screen"
+</div>
+
+<div class="hdr">
+  <h1>&#9883; IGCSE Atomic Structure</h1>
+  <p>Cambridge 0620 &middot; Chapter 1</p>
+</div>
+
+<div class="tabs">
+  <button class="tab on" onclick="showTab('a')">Atom Builder</button>
+  <button class="tab" onclick="showTab('p')">Periodic Table</button>
+  <button class="tab" onclick="showTab('q')">Quiz</button>
+</div>
+
+<!-- ATOM BUILDER -->
+<div class="panel on" id="pa">
+  <div id="atomWrap">
+    <canvas id="ac" width="220" height="220"></canvas>
+    <div id="conf">Config: 1</div>
+  </div>
+  <div class="slabel" style="padding:0 2px">Choose an element</div>
+  <div class="egrid" id="eg"></div>
+  <div class="card" id="icard">
+    <h3 id="ititle">Hydrogen (H)</h3>
+    <p id="ibody">The simplest atom — 1 proton, no neutrons. Makes up most of the universe.</p>
+    <div class="tags" id="itags"></div>
+  </div>
+  <div class="card" style="background:#f5f5f3">
+    <div class="slabel">Subatomic particles</div>
+    <p style="font-size:13px;color:#555;line-height:1.9">
+      <b>Proton</b> — charge +1, mass 1 &nbsp;(in nucleus)<br>
+      <b>Neutron</b> — charge 0, mass 1 &nbsp;(in nucleus)<br>
+      <b>Electron</b> — charge &minus;1, tiny mass &nbsp;(in shells)<br>
+      <b>Atomic number Z</b> = protons<br>
+      <b>Mass number A</b> = protons + neutrons<br>
+      <b>Neutrons</b> = A &minus; Z
+    </p>
+  </div>
+</div>
+
+<!-- PERIODIC TABLE -->
+<div class="panel" id="pp">
+  <p style="font-size:12px;color:#999;margin-bottom:10px">&#8592; Scroll to see full table &nbsp;&middot;&nbsp; Tap element for details</p>
+  <div class="ptscroll"><div class="ptgrid" id="ptg"></div></div>
+  <div class="ptleg" id="ptleg"></div>
+  <div id="ptinfo"><p style="color:#bbb;font-size:13px">Tap any element above</p></div>
+  <div class="card" style="margin-top:12px;background:#f5f5f3">
+    <div class="slabel">Reading the table</div>
+    <p style="font-size:13px;color:#555;line-height:1.9">
+      <b>Group</b> (column) = outer electrons = similar properties<br>
+      <b>Period</b> (row) = number of electron shells<br>
+      <b>Noble gases</b> Group 18 = full outer shell = stable
+    </p>
+  </div>
+</div>
+
+<!-- QUIZ -->
+<div class="panel" id="pq">
+  <div class="qbar" id="qbar"></div>
+  <div id="qc"></div>
+</div>
+
+<div id="offlineBadge">&#9899; Offline mode</div>
+
+<script>
+// ── DATA ─────────────────────────────────────────────────────────────────────
+var EL=[
+ {s:'H', n:'Hydrogen',   z:1,  ne:0,  sh:[1],      g:1,  p:1, c:'nm'},
+ {s:'He',n:'Helium',     z:2,  ne:2,  sh:[2],      g:18, p:1, c:'ng'},
+ {s:'Li',n:'Lithium',    z:3,  ne:4,  sh:[2,1],    g:1,  p:2, c:'me'},
+ {s:'Be',n:'Beryllium',  z:4,  ne:5,  sh:[2,2],    g:2,  p:2, c:'me'},
+ {s:'B', n:'Boron',      z:5,  ne:6,  sh:[2,3],    g:13, p:2, c:'ml'},
+ {s:'C', n:'Carbon',     z:6,  ne:6,  sh:[2,4],    g:14, p:2, c:'nm'},
+ {s:'N', n:'Nitrogen',   z:7,  ne:7,  sh:[2,5],    g:15, p:2, c:'nm'},
+ {s:'O', n:'Oxygen',     z:8,  ne:8,  sh:[2,6],    g:16, p:2, c:'nm'},
+ {s:'F', n:'Fluorine',   z:9,  ne:10, sh:[2,7],    g:17, p:2, c:'nm'},
+ {s:'Ne',n:'Neon',       z:10, ne:10, sh:[2,8],    g:18, p:2, c:'ng'},
+ {s:'Na',n:'Sodium',     z:11, ne:12, sh:[2,8,1],  g:1,  p:3, c:'me'},
+ {s:'Mg',n:'Magnesium',  z:12, ne:12, sh:[2,8,2],  g:2,  p:3, c:'me'},
+ {s:'Al',n:'Aluminium',  z:13, ne:14, sh:[2,8,3],  g:13, p:3, c:'me'},
+ {s:'Si',n:'Silicon',    z:14, ne:14, sh:[2,8,4],  g:14, p:3, c:'ml'},
+ {s:'P', n:'Phosphorus', z:15, ne:16, sh:[2,8,5],  g:15, p:3, c:'nm'},
+ {s:'S', n:'Sulfur',     z:16, ne:16, sh:[2,8,6],  g:16, p:3, c:'nm'},
+ {s:'Cl',n:'Chlorine',   z:17, ne:18, sh:[2,8,7],  g:17, p:3, c:'nm'},
+ {s:'Ar',n:'Argon',      z:18, ne:22, sh:[2,8,8],  g:18, p:3, c:'ng'},
+ {s:'K', n:'Potassium',  z:19, ne:20, sh:[2,8,8,1],g:1,  p:4, c:'me'},
+ {s:'Ca',n:'Calcium',    z:20, ne:20, sh:[2,8,8,2],g:2,  p:4, c:'me'}
+];
+var CBG={me:'#fff8e1',nm:'#f0eeff',ng:'#e0f7ef',ml:'#f2f2ee'};
+var CTC={me:'#5a3000',nm:'#1a0070',ng:'#003d25',ml:'#2a2a2a'};
+var CLB={me:'Metal',nm:'Non-metal',ng:'Noble gas',ml:'Metalloid'};
+var EC=['#6c63d4','#1a9a70','#d44c20','#b07010'];
+var SR=[40,63,86];
+var DSC={
+ H:'Simplest atom. 1 proton, no neutrons. Most abundant element in the universe.',
+ He:'Full outer shell (2e). Noble gas — extremely stable, does not react.',
+ Li:'1 outer electron. Very reactive metal. Forms Li+ by losing that electron.',
+ Be:'2 outer electrons. Reacts with acids. Lightweight alkaline earth metal.',
+ B:'3 outer electrons. Metalloid — sits between metals and non-metals.',
+ C:'4 outer electrons — forms 4 bonds. Foundation of all organic chemistry.',
+ N:'5 outer electrons. N2 has a very strong triple bond — extremely stable.',
+ O:'6 outer electrons, needs 2 more. Very reactive. Essential for respiration.',
+ F:'Most electronegative element. 7 outer electrons — most reactive non-metal.',
+ Ne:'Full outer shell (2,8). Stable noble gas. Used in glowing signs.',
+ Na:'1 outer electron. Reacts vigorously with water, producing H2. Forms Na+.',
+ Mg:'2 outer electrons, forms Mg2+. Burns with a brilliant white flame.',
+ Al:'3 outer electrons, forms Al3+. Most abundant metal in Earth\'s crust.',
+ Si:'4 outer electrons. Metalloid — used in computer chips and solar panels.',
+ P:'5 outer electrons. Found in DNA, ATP and bones. Essential for life.',
+ S:'6 outer electrons. Yellow solid. Used to make sulfuric acid.',
+ Cl:'7 outer electrons — needs just 1 more. Very reactive. Forms Cl-.',
+ Ar:'Full outer shell (2,8,8). Stable noble gas used in welding.',
+ K:'1 outer electron in shell 4. Reacts explosively with cold water.',
+ Ca:'2 outer electrons, forms Ca2+. Essential for bones, teeth and muscles.'
+};
+
+// ── CANVAS ANIMATION ─────────────────────────────────────────────────────────
+var cv = document.getElementById('ac');
+var cx = cv.getContext('2d');
+var OX=110, OY=105;
+var ANG=[0,0,0];
+var SPD=[0.02,0.012,0.007];
+var curEl=EL[0];
+var raf=null;
+
+function frame(){
+  try{
+    cx.clearRect(0,0,220,220);
+    var el=curEl, ns=Math.min(el.sh.length,3), i, j, g;
+
+    // Shell rings
+    for(i=0;i<ns;i++){
+      cx.beginPath();cx.arc(OX,OY,SR[i],0,Math.PI*2);
+      cx.strokeStyle='rgba(0,0,0,0.1)';cx.lineWidth=1;
+      cx.setLineDash([4,3]);cx.stroke();cx.setLineDash([]);
+    }
+
+    // Nucleus gradient glow
+    var pulse=0.65+0.35*Math.sin(Date.now()/700);
+    g=cx.createRadialGradient(OX,OY,1,OX,OY,22);
+    g.addColorStop(0,'rgba(26,111,196,'+(0.85+0.15*pulse)+')');
+    g.addColorStop(1,'rgba(26,111,196,0.08)');
+    cx.beginPath();cx.arc(OX,OY,17+pulse*4,0,Math.PI*2);
+    cx.fillStyle=g;cx.fill();
+
+    // Nucleus solid circle
+    cx.beginPath();cx.arc(OX,OY,19,0,Math.PI*2);
+    cx.fillStyle='#1a6fc4';cx.fill();
+    cx.strokeStyle='rgba(255,255,255,0.4)';cx.lineWidth=1;cx.stroke();
+
+    // Nucleus text
+    cx.fillStyle='#fff';cx.textAlign='center';cx.textBaseline='middle';
+    cx.font='bold 9px -apple-system,Arial,sans-serif';
+    cx.fillText('p+ '+el.z,OX,OY-6);
+    cx.font='8px -apple-system,Arial,sans-serif';
+    cx.fillText('n  '+el.ne,OX,OY+6);
+
+    // Electrons
+    for(i=0;i<ns;i++){
+      var cnt=el.sh[i], r=SR[i];
+      for(j=0;j<cnt;j++){
+        var a=ANG[i]+(j/cnt)*Math.PI*2;
+        var ex=OX+r*Math.cos(a), ey=OY+r*Math.sin(a);
+        // glow ring
+        var eg=cx.createRadialGradient(ex,ey,0,ex,ey,9);
+        eg.addColorStop(0,EC[i]+'cc');eg.addColorStop(1,EC[i]+'00');
+        cx.beginPath();cx.arc(ex,ey,9,0,Math.PI*2);cx.fillStyle=eg;cx.fill();
+        // core dot
+        cx.beginPath();cx.arc(ex,ey,4,0,Math.PI*2);
+        cx.fillStyle=EC[i];cx.fill();
+        cx.strokeStyle='rgba(255,255,255,0.5)';cx.lineWidth=0.8;cx.stroke();
+      }
+    }
+
+    // Element symbol
+    cx.fillStyle='#111';cx.font='bold 18px -apple-system,Arial,sans-serif';
+    cx.textAlign='center';cx.textBaseline='middle';cx.fillText(el.s,OX,198);
+    cx.fillStyle='#888';cx.font='11px -apple-system,Arial,sans-serif';
+    cx.fillText(el.n,OX,214);
+
+    // Advance angles
+    for(i=0;i<3;i++){ANG[i]+=SPD[i];if(ANG[i]>6.28)ANG[i]-=6.28;}
+  }catch(e){}
+  raf=requestAnimationFrame(frame);
+}
+function startCanvas(){if(raf)cancelAnimationFrame(raf);frame();}
+
+// ── TABS ─────────────────────────────────────────────────────────────────────
+function showTab(id){
+  var map={a:'pa',p:'pp',q:'pq'};
+  var keys=['a','p','q'];
+  var tabs=document.querySelectorAll('.tab');
+  keys.forEach(function(k,i){
+    document.getElementById(map[k]).className='panel'+(k===id?' on':'');
+    tabs[i].className='tab'+(k===id?' on':'');
+  });
+  if(id==='q'&&qData.length===0)startQuiz();
+}
+
+// ── ELEMENT BUILDER ───────────────────────────────────────────────────────────
+var sel=0;
+function buildGrid(){
+  var g=document.getElementById('eg');g.innerHTML='';
+  EL.forEach(function(el,i){
+    var b=document.createElement('button');
+    b.className='ebtn'+(i===sel?' on':'');
+    b.innerHTML='<span class="s">'+el.s+'</span><span class="z">Z='+el.z+'</span>';
+    b.onclick=(function(idx){return function(){pickEl(idx);};})(i);
+    g.appendChild(b);
+  });
+}
+function pickEl(i){
+  sel=i;curEl=EL[i];
+  var el=EL[i],ns=Math.min(el.sh.length,3);
+  document.getElementById('conf').textContent='Config: '+el.sh.slice(0,ns).join(', ');
+  document.getElementById('ititle').textContent=el.n+' ('+el.s+')';
+  document.getElementById('ibody').textContent=DSC[el.s]||'';
+  document.getElementById('itags').innerHTML=
+    '<span class="tag tp">p+: '+el.z+'</span>'+
+    '<span class="tag tn">n: '+el.ne+'</span>'+
+    '<span class="tag te">e-: '+el.z+'</span>'+
+    '<span class="tag ta">A = '+(el.z+el.ne)+'</span>';
+  buildGrid();
+}
+
+// ── PERIODIC TABLE ────────────────────────────────────────────────────────────
+function buildPT(){
+  var g=document.getElementById('ptg');g.innerHTML='';
+  var rows=[];
+  for(var i=0;i<4;i++){rows.push([]);}
+  EL.forEach(function(el){
+    var r=el.p-1,c=el.g-1;
+    while(rows[r].length<c)rows[r].push(null);
+    rows[r][c]=el;
+  });
+  for(var r=0;r<4;r++){
+    for(var c=0;c<18;c++){
+      var el=(rows[r]&&rows[r][c])||null;
+      var cell=document.createElement('div');
+      if(el){
+        cell.className='pc';
+        cell.style.background=CBG[el.c];
+        cell.innerHTML='<div class="pz">'+el.z+'</div><div class="ps" style="color:'+CTC[el.c]+'">'+el.s+'</div><div class="pn">'+el.n+'</div>';
+        cell.onclick=(function(e){return function(){showPT(e);};})(el);
+      }else{
+        cell.className='pc em';
+      }
+      g.appendChild(cell);
+    }
+  }
+  var leg=document.getElementById('ptleg');
+  leg.innerHTML=Object.keys(CLB).map(function(k){
+    return '<span><span class="ld" style="background:'+CBG[k]+'"></span>'+CLB[k]+'</span>';
+  }).join('');
+}
+function showPT(el){
+  var ns=el.sh.length,oe=el.sh[ns-1];
+  document.getElementById('ptinfo').innerHTML=
+    '<h3>'+el.n+' ('+el.s+') &mdash; Z = '+el.z+'</h3>'+
+    '<p>Mass number A = '+(el.z+el.ne)+' &nbsp;|&nbsp; Neutrons = '+el.ne+'<br>'+
+    'Config: <b>'+el.sh.join(', ')+'</b> &nbsp;|&nbsp; '+CLB[el.c]+'<br>'+
+    'Group '+el.g+' &nbsp;|&nbsp; Period '+el.p+'<br><br>'+
+    '<b>Group '+el.g+':</b> '+oe+' outer electron'+(oe>1?'s':'')+' &mdash; similar chemical behaviour.<br>'+
+    '<b>Period '+el.p+':</b> '+ns+' electron shell'+(ns>1?'s':'')+'. '+DSC[el.s]+'</p>';
+  document.querySelectorAll('.pc').forEach(function(c){c.classList.remove('hi');});
+  document.querySelectorAll('.pc .ps').forEach(function(s){
+    if(s.textContent===el.s)s.parentNode.classList.add('hi');
+  });
+}
+
+// ── QUIZ ──────────────────────────────────────────────────────────────────────
+var ISO=[
+  {s:'C', z:6,  pairs:[{n:6,A:12},{n:7,A:13},{n:8,A:14}]},
+  {s:'Cl',z:17, pairs:[{n:18,A:35},{n:20,A:37}]},
+  {s:'H', z:1,  pairs:[{n:0,A:1},{n:1,A:2},{n:2,A:3}]},
+  {s:'O', z:8,  pairs:[{n:8,A:16},{n:9,A:17},{n:10,A:18}]},
+  {s:'Na',z:11, pairs:[{n:12,A:23},{n:13,A:24}]},
+  {s:'Mg',z:12, pairs:[{n:12,A:24},{n:13,A:25},{n:14,A:26}]},
+  {s:'K', z:19, pairs:[{n:20,A:39},{n:22,A:41}]},
+  {s:'Ca',z:20, pairs:[{n:20,A:40},{n:22,A:42},{n:24,A:44}]},
+  {s:'Fe',z:26, pairs:[{n:28,A:54},{n:30,A:56}]},
+  {s:'Cu',z:29, pairs:[{n:34,A:63},{n:36,A:65}]}
+];
+function rnd(a){return a.slice().sort(function(){return Math.random()-.5;});}
+var qData=[],qIdx=0,score=0,res=[];
+
+function makeQ(){
+  var qs=[],pool=rnd(ISO);
+  var types=['n','p','a','i','n','p','a','n','p','a'];
+  for(var i=0;i<10;i++){
+    var iso=pool[i%pool.length];
+    var pair=rnd(iso.pairs);
+    var a=pair[0],b=pair[1]||{n:pair[0].n+2,A:pair[0].A+2};
+    var t=types[i],cor,bad;
+    if(t==='n'){
+      cor=a.n;bad=rnd([a.n+1,a.n-1,a.n+2,b.n].filter(function(x){return x!==cor&&x>=0;})).slice(0,3);
+      qs.push({t:'n',q:'How many neutrons does '+iso.s+'-'+a.A+' have?',s:iso.s,A:a.A,z:iso.z,n:a.n,cor:cor,opts:rnd([cor].concat(bad))});
+    }else if(t==='p'){
+      cor=iso.z;bad=rnd([iso.z+1,iso.z-1,iso.z+2,a.n].filter(function(x){return x!==cor&&x>0;})).slice(0,3);
+      qs.push({t:'p',q:'How many protons are in '+iso.s+'-'+a.A+'?',s:iso.s,A:a.A,z:iso.z,n:a.n,cor:cor,opts:rnd([cor].concat(bad))});
+    }else if(t==='a'){
+      cor=a.A;bad=rnd([a.A+1,a.A-1,b.A,a.A+2].filter(function(x){return x!==cor&&x>0;})).slice(0,3);
+      qs.push({t:'a',q:iso.s+' has '+iso.z+' protons and '+a.n+' neutrons. What is its mass number?',s:iso.s,A:a.A,z:iso.z,n:a.n,cor:cor,opts:rnd([cor].concat(bad))});
+    }else{
+      cor='Yes - same Z, different neutrons';
+      bad=['No - they are different elements','Yes - same neutrons too','No - different A means different element'];
+      qs.push({t:'i',q:'Are '+iso.s+'-'+a.A+' and '+iso.s+'-'+b.A+' isotopes of the same element?',s:iso.s,A:a.A,z:iso.z,n:a.n,cor:cor,opts:rnd([cor].concat(bad.slice(0,3)))});
+    }
+  }
+  return qs;
+}
+function fact(q){
+  if(q.t==='n')return 'Neutrons = A \u2212 Z = '+q.A+' \u2212 '+q.z+' = '+q.n+'.';
+  if(q.t==='p')return 'The atomic number Z is always '+q.z+' for '+q.s+'.';
+  if(q.t==='a')return 'Mass number A = protons + neutrons = '+q.z+' + '+q.n+' = '+(q.z+q.n)+'.';
+  return 'Isotopes: same Z (proton number), different number of neutrons.';
+}
+function startQuiz(){qData=makeQ();qIdx=0;score=0;res=[];buildBar();showQ();}
+function buildBar(){
+  var b=document.getElementById('qbar');b.innerHTML='';
+  for(var i=0;i<qData.length;i++){
+    var d=document.createElement('div');d.id='qd'+i;d.className='qd';b.appendChild(d);
+  }
+}
+function showQ(){
+  if(qIdx>=qData.length){showScore();return;}
+  var q=qData[qIdx];
+  var el=null;for(var i=0;i<EL.length;i++){if(EL[i].s===q.s){el=EL[i];break;}}
+  var cat=el?el.c:'nm';
+  var c=document.getElementById('qc');c.innerHTML='';
+  var card=document.createElement('div');card.className='qcard';
+  card.innerHTML=
+    '<div class="ql">Question '+(qIdx+1)+' / '+qData.length+'</div>'+
+    '<div class="qq">'+q.q+'</div>'+
+    '<div class="qbox">'+
+      '<div class="qel" style="background:'+CBG[cat]+'">'+
+        '<div class="qs" style="color:'+CTC[cat]+'">'+q.s+'</div>'+
+        '<div class="qnum">'+q.A+'</div>'+
+      '</div>'+
+      '<div class="qfacts">Z = '+q.z+'<br>A = '+q.A+'<br>n = A \u2212 Z</div>'+
+    '</div>'+
+    '<div class="opts" id="opts"></div>'+
+    '<div class="fb" id="fb"></div>'+
+    '<button class="nxt" id="nxt" onclick="nextQ()">'+(qIdx<qData.length-1?'Next \u2192':'See Score \u2192')+'</button>';
+  c.appendChild(card);
+  var opts=document.getElementById('opts');
+  q.opts.forEach(function(o){
+    var b=document.createElement('button');b.className='opt';b.textContent=o;
+    b.onclick=(function(ans){return function(){answer(ans,q.cor,q);};})(o);
+    opts.appendChild(b);
+  });
+}
+function answer(chosen,cor,q){
+  document.querySelectorAll('.opt').forEach(function(b){
+    b.setAttribute('disabled','');
+    if(b.textContent===cor)b.classList.add('show');
+    if(b.textContent===chosen&&chosen!==cor)b.classList.add('no');
+    if(b.textContent===chosen&&chosen===cor)b.classList.add('ok');
+  });
+  var ok=chosen===cor;if(ok)score++;res.push(ok);
+  var fb=document.getElementById('fb');
+  fb.className='fb on '+(ok?'ok':'no');
+  fb.textContent=(ok?'Correct! ':'Not quite. ')+fact(q);
+  document.getElementById('qd'+qIdx).className='qd '+(ok?'ok':'no');
+  document.getElementById('nxt').className='nxt on';
+}
+function nextQ(){qIdx++;buildBar();showQ();}
+function showScore(){
+  var pct=Math.round(score/qData.length*100);
+  var msg=score>=9?'Outstanding! Perfect score.':
+    score>=7?'Great work! Almost exam-ready.':
+    score>=5?'Good effort! Review A\u2212Z calculations and configs.':
+    'Keep going! Re-read notes on protons, neutrons and shells.';
+  var c=document.getElementById('qc');c.innerHTML='';
+  var sc=document.createElement('div');sc.className='sc';
+  sc.innerHTML=
+    '<div class="scn">'+score+'/'+qData.length+'</div>'+
+    '<div class="scl">'+pct+'%</div>'+
+    '<div class="scbar">'+res.map(function(r){return '<div class="scb '+(r?'ok':'no')+'"></div>';}).join('')+'</div>'+
+    '<div class="scmsg">'+msg+'</div>'+
+    '<button class="rbtn" onclick="startQuiz()">Try again</button>';
+  c.appendChild(sc);
+}
+
+// ── iOS INSTALL BANNER ────────────────────────────────────────────────────────
+function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent);}
+function isStandalone(){return window.navigator.standalone===true;}
+if(isIOS()&&!isStandalone()){
+  document.getElementById('installBanner').style.display='block';
+}
+
+// ── OFFLINE INDICATOR ────────────────────────────────────────────────────────
+window.addEventListener('offline',function(){
+  document.getElementById('offlineBadge').style.display='block';
+});
+window.addEventListener('online',function(){
+  document.getElementById('offlineBadge').style.display='none';
+});
+
+// ── SERVICE WORKER ────────────────────────────────────────────────────────────
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(){});
+  });
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+buildGrid();
+pickEl(0);
+buildPT();
+startCanvas();
+</script>
+</body>
+</html>
